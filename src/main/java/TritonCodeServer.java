@@ -43,50 +43,53 @@ public class TritonCodeServer {
         String username = OperationSender.userUsernameMap.get(user);
         OperationSender.userUsernameMap.remove(user);
         //OperationSender.broadcastMessage(sender = "Server", msg = (username + " left the chat"));
-        System.out.println("Reset");
-        serverDriver = null;
     }
 
     @OnWebSocketMessage
     public void onMessage(Session user, String message) {
-        System.out.println(message);
-        if (message.contains("START:")) {
-            int newlinePos = message.indexOf((char) 0);
-            String key = message.substring(6, newlinePos);
-            String document = message.substring(newlinePos + 1);
-            serverDriver = new ServerDriver(document, key);
-            System.out.println(serverDriver.getDocument().getData());
-        } else if (message.contains("DOCUMENT")) {
-            if (serverDriver == null) {
-                return;
-            }
-            // TODO: check if file exists
-            StringTokenizer tokenizer = new StringTokenizer(message, "" + (char) 0);
-            tokenizer.nextElement();
-            String key = (String) tokenizer.nextElement();
-            String editKey = (String) tokenizer.nextElement();
-            String parentKey = (String) tokenizer.nextElement();
-            String edits = (String) tokenizer.nextElement();
-            serverDriver.enqueueClientOperation(new ServerOperation(OperationParser.strToOperation(edits), editKey, parentKey));
-            serverDriver.processChange();
-            System.out.println(serverDriver.getDocument().getData());
+        try {
+            System.out.println(message);
+            if (message.contains("START:")) {
+                int newlinePos = message.indexOf((char) 0);
+                String key = message.substring(6, newlinePos);
+                String document = message.substring(newlinePos + 1);
+                serverDriver = new ServerDriver(document, key);
+                System.out.println(serverDriver.getDocument().getData());
+            } else if (message.contains("DOCUMENT")) {
+                if (serverDriver == null) {
+                    return;
+                }
+                // TODO: check if file exists
+                StringTokenizer tokenizer = new StringTokenizer(message, "" + (char) 0);
+                tokenizer.nextElement();
+                String key = (String) tokenizer.nextElement();
+                String editKey = (String) tokenizer.nextElement();
+                String parentKey = (String) tokenizer.nextElement();
+                String edits = (String) tokenizer.nextElement();
+                serverDriver.enqueueClientOperation(new ServerOperation(OperationParser.strToOperation(edits), editKey, parentKey));
+                serverDriver.processChange();
+                System.out.println(serverDriver.getDocument().getData());
 
-            // Broadcast server message
-            ServerOperation serverOperation = serverDriver.sendServerOperationToClient();
-            OperationSender.broadcastOperation(sender = "Server", msg = "DOCUMENT" + (char) 0 + serverDriver.getKey() + (char) 0 + serverOperation.getKey() + (char) 0 + serverOperation.getParentKey() + (char) 0 + OperationParser.operationToStr(serverOperation.getOperation()));
-        } else if (message.contains("CONNECT")) {
-            if (serverDriver == null) {
-                return;
-            }
-            StringTokenizer tokenizer = new StringTokenizer(message, "" + (char) 0);
-            tokenizer.nextElement();
-            String key = (String) tokenizer.nextElement();
+                // Broadcast server message
+                ServerOperation serverOperation = serverDriver.sendServerOperationToClient();
+                OperationSender.broadcastOperation(sender = "Server", msg = "DOCUMENT" + (char) 0 + serverDriver.getKey() + (char) 0 + serverOperation.getKey() + (char) 0 + serverOperation.getParentKey() + (char) 0 + OperationParser.operationToStr(serverOperation.getOperation()));
+            } else if (message.contains("CONNECT")) {
+                if (serverDriver == null) {
+                    return;
+                }
+                StringTokenizer tokenizer = new StringTokenizer(message, "" + (char) 0);
+                tokenizer.nextElement();
+                String key = (String) tokenizer.nextElement();
 
-            try {
-                user.getRemote().sendString("START:" + key + (char) 0 + serverDriver.getDocument().getData());
-            } catch (IOException e) {
-                e.printStackTrace();
+                try {
+                    user.getRemote().sendString("START:" + key + (char) 0 + serverDriver.getDocument().getData());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+        } catch (Exception e) {
+            System.out.println("Reset");
+            serverDriver = null;
         }
     }
 }
