@@ -16,7 +16,14 @@ public class TritonCodeServer {
     public static void main(String[] args) {
         System.out.println("Hello, World!");
 
-        port(3000);
+        // In order for this to work on Heroku, we need to allow Heroku to set the port number
+        final String portNumber = System.getenv("PORT");
+        if (portNumber != null) {
+            port(Integer.parseInt(portNumber));
+        } else {
+            port(4567);
+        }
+
         staticFileLocation("/public");
         //webSocket("/chat", TritonCodeServer.class);
         webSocket("/code", TritonCodeServer.class);
