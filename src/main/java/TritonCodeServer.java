@@ -43,6 +43,8 @@ public class TritonCodeServer {
         String username = OperationSender.userUsernameMap.get(user);
         OperationSender.userUsernameMap.remove(user);
         //OperationSender.broadcastMessage(sender = "Server", msg = (username + " left the chat"));
+        System.out.println("RESET");
+        serverDriver = null;
     }
 
     @OnWebSocketMessage
@@ -64,7 +66,10 @@ public class TritonCodeServer {
             String key = (String) tokenizer.nextElement();
             String editKey = (String) tokenizer.nextElement();
             String parentKey = (String) tokenizer.nextElement();
-            String edits = (String) tokenizer.nextElement();
+            String edits = "";
+            if (tokenizer.hasMoreElements()) {
+                edits = (String) tokenizer.nextElement();
+            }
             serverDriver.enqueueClientOperation(new ServerOperation(OperationParser.strToOperation(edits), editKey, parentKey));
             serverDriver.processChange();
             System.out.println(serverDriver.getDocument().getData());
